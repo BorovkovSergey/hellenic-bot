@@ -111,6 +111,7 @@ learn.post(
       original: string;
       transcription: string | null;
       translations: Record<string, string>;
+      notes: string | null;
       srsStage: SrsStage;
     };
 
@@ -118,7 +119,7 @@ learn.post(
 
     if (mode === "new") {
       const rows = await db.execute(sql`
-        SELECT w.id, w.original, w.transcription, w.translations
+        SELECT w.id, w.original, w.transcription, w.translations, w.notes
         FROM words w
         LEFT JOIN user_progress up ON up.word_id = w.id AND up.user_id = ${userId}
         WHERE up.id IS NULL
@@ -133,11 +134,12 @@ learn.post(
           typeof r.translations === "string"
             ? JSON.parse(r.translations)
             : r.translations,
+        notes: r.notes ?? null,
         srsStage: "new" as SrsStage,
       }));
     } else if (mode === "continue") {
       const rows = await db.execute(sql`
-        SELECT w.id, w.original, w.transcription, w.translations, up.srs_stage
+        SELECT w.id, w.original, w.transcription, w.translations, w.notes, up.srs_stage
         FROM user_progress up
         JOIN words w ON w.id = up.word_id
         WHERE up.user_id = ${userId}
@@ -154,12 +156,13 @@ learn.post(
           typeof r.translations === "string"
             ? JSON.parse(r.translations)
             : r.translations,
+        notes: r.notes ?? null,
         srsStage: r.srs_stage as SrsStage,
       }));
     } else {
       // review
       const rows = await db.execute(sql`
-        SELECT w.id, w.original, w.transcription, w.translations, up.srs_stage
+        SELECT w.id, w.original, w.transcription, w.translations, w.notes, up.srs_stage
         FROM user_progress up
         JOIN words w ON w.id = up.word_id
         WHERE up.user_id = ${userId}
@@ -176,6 +179,7 @@ learn.post(
           typeof r.translations === "string"
             ? JSON.parse(r.translations)
             : r.translations,
+        notes: r.notes ?? null,
         srsStage: r.srs_stage as SrsStage,
       }));
     }
@@ -208,6 +212,7 @@ learn.post(
             prompt: {
               original: word.original,
               transcription: word.transcription ?? undefined,
+              notes: word.notes,
             },
             answer: { translation },
           });
@@ -225,6 +230,7 @@ learn.post(
             prompt: {
               original: word.original,
               transcription: word.transcription ?? undefined,
+              notes: word.notes,
             },
             options,
             correct_index: 0,
@@ -246,7 +252,7 @@ learn.post(
           wordExercises.push({
             word_id: word.id,
             exercise_type: "multiple_choice_reverse",
-            prompt: { translation },
+            prompt: { translation, notes: word.notes },
             options,
             correct_index: 0,
           });
@@ -254,7 +260,7 @@ learn.post(
           wordExercises.push({
             word_id: word.id,
             exercise_type: "fill_blank",
-            prompt: { translation },
+            prompt: { translation, notes: word.notes },
             answer: { original: word.original },
           });
         } else if (type === "scramble") {
@@ -264,6 +270,7 @@ learn.post(
             prompt: {
               translation,
               scrambled: scrambleWord(word.original),
+              notes: word.notes,
             },
             answer: { original: word.original },
           });

@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
+import { NotesHint } from "./NotesHint.js";
 
 interface MultipleChoiceProps {
-  prompt: { original: string; transcription?: string };
+  prompt: { original: string; transcription?: string; notes?: string | null };
   options: string[];
   correctIndex: number;
   onComplete: (result: { is_correct: boolean; answer_given: string }) => void;
@@ -54,6 +55,7 @@ export function MultipleChoice({ prompt, options, correctIndex, onComplete }: Mu
             {prompt.transcription}
           </div>
         )}
+        <NotesHint notes={prompt.notes} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

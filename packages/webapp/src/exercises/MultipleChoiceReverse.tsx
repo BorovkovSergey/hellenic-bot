@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
+import { NotesHint } from "./NotesHint.js";
 
 interface Option {
   original: string;
@@ -7,7 +8,7 @@ interface Option {
 }
 
 interface MultipleChoiceReverseProps {
-  prompt: { translation: string };
+  prompt: { translation: string; notes?: string | null };
   options: Option[];
   correctIndex: number;
   onComplete: (result: { is_correct: boolean; answer_given: string }) => void;
@@ -53,6 +54,7 @@ export function MultipleChoiceReverse({ prompt, options, correctIndex, onComplet
         <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
           {prompt.translation}
         </div>
+        <NotesHint notes={prompt.notes} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

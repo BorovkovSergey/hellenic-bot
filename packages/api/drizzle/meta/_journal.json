@@ -15,6 +15,20 @@
       "when": 1772046624034,
       "tag": "0001_seed_words",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772046624035,
+      "tag": "0002_add_notes_column",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1772046624036,
+      "tag": "0003_update_seed_notes",
+      "breakpoints": true
     }
   ]
 }

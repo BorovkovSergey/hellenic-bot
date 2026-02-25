@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { hapticLight } from "../telegram.js";
 import { t, type Lang } from "../i18n.js";
+import { NotesHint } from "./NotesHint.js";
 
 interface FlashcardProps {
-  prompt: { original: string; transcription?: string };
+  prompt: { original: string; transcription?: string; notes?: string | null };
   answer: { translation: string };
   lang: Lang;
   onComplete: (result: { is_correct: true; answer_given: null }) => void;
@@ -33,6 +34,7 @@ export function Flashcard({ prompt, answer, lang, onComplete }: FlashcardProps) 
           {prompt.transcription}
         </div>
       )}
+      <NotesHint notes={prompt.notes} />
 
       {!revealed ? (
         <button onClick={handleReveal} style={actionBtnStyle}>

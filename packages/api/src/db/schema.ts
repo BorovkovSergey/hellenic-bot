@@ -46,6 +46,7 @@ export const words = pgTable("words", {
   original: varchar("original", { length: 255 }).unique().notNull(),
   transcription: varchar("transcription", { length: 255 }),
   translations: jsonb("translations").notNull().$type<Record<string, string>>(),
+  notes: varchar("notes", { length: 255 }),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

@@ -82,6 +82,7 @@ const FlashcardExerciseSchema = z.object({
   prompt: z.object({
     original: z.string(),
     transcription: z.string().optional(),
+    notes: z.string().nullable(),
   }),
   answer: z.object({
     translation: z.string(),
@@ -94,6 +95,7 @@ const MultipleChoiceExerciseSchema = z.object({
   prompt: z.object({
     original: z.string(),
     transcription: z.string().optional(),
+    notes: z.string().nullable(),
   }),
   options: z.array(z.string()).length(4),
   correct_index: z.literal(0),
@@ -104,6 +106,7 @@ const MultipleChoiceReverseExerciseSchema = z.object({
   exercise_type: z.literal("multiple_choice_reverse"),
   prompt: z.object({
     translation: z.string(),
+    notes: z.string().nullable(),
   }),
   options: z
     .array(
@@ -121,6 +124,7 @@ const FillBlankExerciseSchema = z.object({
   exercise_type: z.literal("fill_blank"),
   prompt: z.object({
     translation: z.string(),
+    notes: z.string().nullable(),
   }),
   answer: z.object({
     original: z.string(),
@@ -133,6 +137,7 @@ const ScrambleExerciseSchema = z.object({
   prompt: z.object({
     translation: z.string(),
     scrambled: z.array(z.array(z.string())),
+    notes: z.string().nullable(),
   }),
   answer: z.object({
     original: z.string(),

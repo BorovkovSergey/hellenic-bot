@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
 import { t, type Lang } from "../i18n.js";
+import { NotesHint } from "./NotesHint.js";
 
 interface FillBlankProps {
-  prompt: { translation: string };
+  prompt: { translation: string; notes?: string | null };
   answer: { original: string };
   lang: Lang;
   onComplete: (result: { is_correct: boolean; answer_given: string }) => void;
@@ -43,6 +44,7 @@ export function FillBlank({ prompt, answer, lang, onComplete }: FillBlankProps) 
       <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
         {prompt.translation}
       </div>
+      <NotesHint notes={prompt.notes} />
 
       <input
         type="text"

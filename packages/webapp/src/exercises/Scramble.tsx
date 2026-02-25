@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { hapticLight, hapticSuccess, hapticError } from "../telegram.js";
 import { t, type Lang } from "../i18n.js";
+import { NotesHint } from "./NotesHint.js";
 
 interface ScrambleProps {
-  prompt: { translation: string; scrambled: string[][] };
+  prompt: { translation: string; scrambled: string[][]; notes?: string | null };
   answer: { original: string };
   lang: Lang;
   onComplete: (result: { is_correct: boolean; answer_given: string }) => void;
@@ -104,6 +105,7 @@ export function Scramble({ prompt, answer, lang, onComplete }: ScrambleProps) {
       <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
         {prompt.translation}
       </div>
+      <NotesHint notes={prompt.notes} />
 
       {/* Slots */}
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
