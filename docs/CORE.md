@@ -16,9 +16,9 @@ Word selection is dynamic — there are no predefined sets. The app builds each 
 │ telegram_id      │  └───>│ user_id (FK)     │    │  │ original      │
 │ first_name       │       │ word_id (FK)     │<───┘  │ transcription │
 │ last_name        │       │ srs_stage        │       │ translations  │
-│ username         │       │ next_review_at   │       │ created_at    │
-│ language_code    │       │ last_reviewed_at │       └───────┬───────┘
-│ display_language │       │ created_at       │               │
+│ username         │       │ next_review_at   │       │ notes         │
+│ language_code    │       │ last_reviewed_at │       │ created_at    │
+│ display_language │       │ created_at       │       └───────┬───────┘
 │ words_per_lesson │       └──────────────────┘               │
 │ created_at       │                                          │
 │ updated_at       │       ┌──────────────────┐               │
@@ -72,6 +72,7 @@ Greek vocabulary items. Managed by the developer via migrations.
 | original      | `varchar(255)` | UNIQUE, NOT NULL        | Greek word or phrase                                         |
 | transcription | `varchar(255)` |                         | Phonetic transcription (Latin characters)                    |
 | translations  | `jsonb`        | NOT NULL                | Translations keyed by language: `{"ru": "...", "en": "..."}` |
+| notes         | `varchar(255)` |                         | Grammar hint shown during exercises (see below)              |
 | created_at    | `timestamptz`  | NOT NULL, DEFAULT now() |                                                              |
 
 **Notes:**
@@ -81,6 +82,21 @@ Greek vocabulary items. Managed by the developer via migrations.
   ```
 - The app selects the translation based on the user's `display_language`. Fallback order: `display_language` → `en`.
 - Every word **must** have at least an `en` key in `translations` (used as the ultimate fallback). This is a data integrity requirement enforced at migration time.
+- `notes` is a short grammar hint displayed to the user during exercises. Nullable — not every word needs a note. Content examples:
+
+  | Type               | Example               | Meaning                                  |
+  |--------------------|-----------------------|------------------------------------------|
+  | Article            | `το`                  | Neuter noun                              |
+  | Article            | `η`                   | Feminine noun                            |
+  | Article            | `ο`                   | Masculine noun                           |
+  | Adjective endings  | `-η, -ο`             | Feminine and neuter forms                |
+  | Verb ending        | `-ώ`                  | Alternative conjugation                  |
+  | Part of speech     | `[adv]`               | Adverb                                   |
+  | Context            | `[adv; time]`         | Adverb with temporal usage               |
+  | Cross-reference    | `[see also αγωνία]`   | Related word                             |
+  | Gender forms       | `ο / Αγγλίδα, η`     | Masculine / feminine form                |
+
+  Notes are language-independent (Greek grammar) and stored as a plain string, not inside `translations`.
 
 ---
 
@@ -345,11 +361,13 @@ mkdir -p packages/api/drizzle
 touch packages/api/drizzle/0004_add_words.sql
 
 # 2. Write INSERT/UPDATE statements:
-#    INSERT INTO words (original, transcription, translations)
-#    VALUES ('γεια', 'yia', '{"en": "hello", "ru": "привет"}');
+#    INSERT INTO words (original, transcription, translations, notes)
+#    VALUES ('γεια', 'yia', '{"en": "hello", "ru": "привет"}', NULL);
 #
-#    UPDATE words SET translations = '{"en": "hi", "ru": "привет"}'
-#    WHERE original = 'γεια';
+#    INSERT INTO words (original, transcription, translations, notes)
+#    VALUES ('αγάπη', 'agápi', '{"en": "love", "ru": "любовь"}', 'η');
+#
+#    UPDATE words SET notes = 'η' WHERE original = 'αγάπη';
 
 # 3. Apply
 pnpm --filter api db:migrate

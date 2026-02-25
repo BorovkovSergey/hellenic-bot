@@ -227,7 +227,8 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "exercise_type": "flashcard",
       "prompt": {
         "original": "γεια",
-        "transcription": "yia"
+        "transcription": "yia",
+        "notes": null
       },
       "answer": {
         "translation": "hello"
@@ -238,7 +239,8 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "exercise_type": "multiple_choice",
       "prompt": {
         "original": "ευχαριστώ",
-        "transcription": "efcharistó"
+        "transcription": "efcharistó",
+        "notes": null
       },
       "options": ["thank you", "goodbye", "please", "sorry"],
       "correct_index": 0
@@ -248,7 +250,8 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "exercise_type": "multiple_choice",
       "prompt": {
         "original": "γεια",
-        "transcription": "yia"
+        "transcription": "yia",
+        "notes": null
       },
       "options": ["hello", "water", "bread", "house"],
       "correct_index": 0
@@ -258,6 +261,7 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "exercise_type": "scramble",
       "prompt": {
         "translation": "water",
+        "notes": "το",
         "scrambled": [["ό", "ν", "ρ", "ε"]]
       },
       "answer": {
@@ -268,7 +272,8 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "word_id": 43,
       "exercise_type": "multiple_choice_reverse",
       "prompt": {
-        "translation": "thank you"
+        "translation": "thank you",
+        "notes": null
       },
       "options": [
         { "original": "ευχαριστώ", "transcription": "efcharistó" },
@@ -282,7 +287,8 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "word_id": 44,
       "exercise_type": "fill_blank",
       "prompt": {
-        "translation": "water"
+        "translation": "water",
+        "notes": "το"
       },
       "answer": {
         "original": "νερό"
@@ -301,26 +307,26 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       {
         "word_id": 42,
         "exercise_type": "flashcard",
-        "prompt": { "original": "γεια", "transcription": "yia" },
+        "prompt": { "original": "γεια", "transcription": "yia", "notes": null },
         "answer": { "translation": "hello" }
       },
       {
         "word_id": 43,
         "exercise_type": "flashcard",
-        "prompt": { "original": "ευχαριστώ", "transcription": "efcharistó" },
+        "prompt": { "original": "ευχαριστώ", "transcription": "efcharistó", "notes": null },
         "answer": { "translation": "thank you" }
       },
       {
         "word_id": 42,
         "exercise_type": "multiple_choice",
-        "prompt": { "original": "γεια", "transcription": "yia" },
+        "prompt": { "original": "γεια", "transcription": "yia", "notes": null },
         "options": ["hello", "water", "bread", "house"],
         "correct_index": 0
       },
       {
         "word_id": 43,
         "exercise_type": "multiple_choice",
-        "prompt": { "original": "ευχαριστώ", "transcription": "efcharistó" },
+        "prompt": { "original": "ευχαριστώ", "transcription": "efcharistó", "notes": null },
         "options": ["thank you", "goodbye", "please", "sorry"],
         "correct_index": 0
       }
@@ -336,6 +342,7 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
 - For fill_blank, `answer.original` is used for comparison
 - For scramble, `prompt.scrambled` is `string[][]` — an array of groups, one per word in the original phrase. Each group contains the shuffled characters of that word. For single words: `[["ό","ν","ρ","ε"]]`. For multi-word phrases (e.g. `"καλημέρα σας"`): `[["μ","ά","κ","η","ε","λ","ρ","α"],["σ","α","ς"]]`. Spaces between groups are fixed and non-interactive in the UI
 - Translations and option labels use the user's `display_language`. If the key is missing from `words.translations`, falls back to `en`
+- `notes` is included in `prompt` for all exercise types. Set to `null` when the word has no notes. Contains a grammar hint from `words.notes` (article, endings, part of speech, etc.)
 
 **Errors:**
 - `400 NO_WORDS` — no words available for the selected mode

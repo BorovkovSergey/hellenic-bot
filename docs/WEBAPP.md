@@ -137,6 +137,14 @@ Summary shown after completing all exercises.
 
 **Typography rule:** wherever a Greek word appears, show it as **bold/large** (primary focus) with transcription below in **muted/small** (secondary). The user should focus on the Greek script, transcription is a reading aid.
 
+**Notes display rule:** if a word has `notes` (grammar hint), it is rendered as **muted italic small text** near the prompt, **blurred by default**. The user taps the blurred text to reveal it. This prevents accidental spoilers (e.g. an article that gives away the word's gender). Placement depends on exercise type (see mockups below). Notes are `null` for words without grammar hints — nothing is rendered in that case.
+
+**Notes blur behavior:**
+- Default state: text is rendered but blurred (`filter: blur(4px)`), not readable
+- On tap: blur is removed, text becomes readable — single tap toggles reveal
+- Once revealed, stays revealed for the rest of that exercise (no re-blur)
+- Each new exercise resets the blur state (blurred again)
+
 ### Flashcard
 
 The user sees the Greek word, tries to recall the translation, then reveals it.
@@ -145,10 +153,11 @@ The user sees the Greek word, tries to recall the translation, then reveals it.
 State 1 (front):                State 2 (revealed):
 ┌────────────────────┐          ┌────────────────────┐
 │                    │          │                    │
-│       γεια         │  ← bold  │       γεια         │
-│       yia          │  ← muted │       yia          │
-│                    │          │                    │
-│   [ Tap to reveal ]│          │      hello         │
+│       αγάπη        │  ← bold  │       αγάπη        │
+│       agápi        │  ← muted │       agápi        │
+│       ░░░          │  ← notes │         η          │
+│                    │  blurred │                    │
+│   [ Tap to reveal ]│          │      love          │
 │                    │          │                    │
 ├────────────────────┤          ├────────────────────┤
 │                    │          │   [ Continue → ]   │
@@ -157,6 +166,7 @@ State 1 (front):                State 2 (revealed):
 
 - Tap the card or button to reveal the translation
 - After reveal, tap "Continue" to proceed — always counts as correct
+- Notes (if present) are shown below transcription — blurred by default, tap to reveal
 
 ### Multiple Choice
 
@@ -183,6 +193,7 @@ Show Greek word, pick the correct translation from 4 options. The API always ret
 
 - On tap: correct answer highlights green, wrong answer highlights red (correct also shown)
 - Auto-advance after brief delay
+- Notes (if present) shown below transcription — blurred by default, tap to reveal
 
 ### Multiple Choice Reverse
 
@@ -211,6 +222,7 @@ Show translation, pick the correct Greek word from 4 options. Same client-side s
 ```
 
 Same interaction as multiple choice, but reversed direction.
+- Notes (if present) shown below translation — blurred by default, tap to reveal
 
 ### Fill Blank
 
@@ -220,6 +232,7 @@ Type the Greek word given its translation.
 ┌─────────────────────────────┐
 │                             │
 │          water              │  ← translation
+│           ░░                │  ← notes (blurred)
 │                             │
 │    ┌─────────────────┐      │
 │    │ ν ε ρ _         │      │  ← Text input
@@ -232,6 +245,7 @@ Type the Greek word given its translation.
 - Greek keyboard input
 - On submit: compare answer (case-insensitive, trimmed, accents must match exactly)
 - Show correct answer if wrong: word bold + transcription muted below it
+- Notes (if present) shown below translation — blurred by default, tap to reveal
 
 ### Scramble
 
@@ -241,6 +255,7 @@ Arrange shuffled letters of the Greek word in the correct order.
 ┌─────────────────────────────┐
 │                             │
 │          water              │  ← translation
+│           ░░                │  ← notes (blurred)
 │                             │
 │    Answer: [ ν ][ ε ][ _ ]  │  ← Slots
 │                             │
@@ -254,6 +269,7 @@ Arrange shuffled letters of the Greek word in the correct order.
 - Tap a placed letter to remove it
 - Check button validates the full word
 - **Multi-word phrases:** each word is a separate group of slots and available letters, with a fixed space separator between groups. The user fills each group independently
+- Notes (if present) shown below translation — blurred by default, tap to reveal
 
 ## Authentication
 
