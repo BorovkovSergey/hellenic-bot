@@ -141,7 +141,8 @@ Summary shown after completing all exercises.
 
 **Notes blur behavior:**
 - Default state: text is rendered but blurred (`filter: blur(4px)`), not readable
-- On tap: blur is removed, text becomes readable — single tap toggles reveal
+- Revealed automatically when the user answers (selects an option, checks fill_blank/scramble, or reveals a flashcard)
+- Can also be revealed manually by tapping the blurred text
 - Once revealed, stays revealed for the rest of that exercise (no re-blur)
 - Each new exercise resets the blur state (blurred again)
 

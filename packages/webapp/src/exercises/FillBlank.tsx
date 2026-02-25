@@ -44,7 +44,7 @@ export function FillBlank({ prompt, answer, lang, onComplete }: FillBlankProps) 
       <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
         {prompt.translation}
       </div>
-      <NotesHint notes={prompt.notes} />
+      <NotesHint notes={prompt.notes} revealed={result !== null} />
 
       <input
         type="text"

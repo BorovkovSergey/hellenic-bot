@@ -54,7 +54,7 @@ export function MultipleChoiceReverse({ prompt, options, correctIndex, onComplet
         <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
           {prompt.translation}
         </div>
-        <NotesHint notes={prompt.notes} />
+        <NotesHint notes={prompt.notes} revealed={selected !== null} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

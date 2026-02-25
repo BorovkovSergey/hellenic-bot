@@ -34,7 +34,7 @@ export function Flashcard({ prompt, answer, lang, onComplete }: FlashcardProps) 
           {prompt.transcription}
         </div>
       )}
-      <NotesHint notes={prompt.notes} />
+      <NotesHint notes={prompt.notes} revealed={revealed} />
 
       {!revealed ? (
         <button onClick={handleReveal} style={actionBtnStyle}>

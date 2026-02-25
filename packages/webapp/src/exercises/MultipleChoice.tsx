@@ -55,7 +55,7 @@ export function MultipleChoice({ prompt, options, correctIndex, onComplete }: Mu
             {prompt.transcription}
           </div>
         )}
-        <NotesHint notes={prompt.notes} />
+        <NotesHint notes={prompt.notes} revealed={selected !== null} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>

@@ -105,7 +105,7 @@ export function Scramble({ prompt, answer, lang, onComplete }: ScrambleProps) {
       <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
         {prompt.translation}
       </div>
-      <NotesHint notes={prompt.notes} />
+      <NotesHint notes={prompt.notes} revealed={result !== null} />
 
       {/* Slots */}
       <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
