@@ -1,4 +1,4 @@
-# Hellenic Bot — Database Design
+# Hellenic Bot — Core Logic & Database
 
 ## Overview
 
@@ -9,31 +9,30 @@ Word selection is dynamic — there are no predefined sets. The app builds each 
 ## ER Diagram
 
 ```
-┌──────────────┐       ┌──────────────────┐       ┌───────────────┐
-│    users     │       │  user_progress   │       │    words      │
-├──────────────┤       ├──────────────────┤       ├───────────────┤
-│ id (PK)      │──┐    │ id (PK)          │    ┌──│ id (PK)       │
-│ telegram_id  │  └───>│ user_id (FK)     │    │  │ original      │
-│ first_name   │       │ word_id (FK)     │<───┘  │ transcription │
-│ last_name    │       │ srs_stage        │       │ translations  │
-│ username     │       │ next_review_at   │       │ part_of_speech│
-│ language_code│       │ last_reviewed_at │       │ notes         │
-│ created_at   │       │ created_at       │       │ created_at    │
-│ updated_at   │       └──────────────────┘       └───────┬───────┘
-└──────┬───────┘                                          │
-       │                                                  │
-       │       ┌──────────────────┐                       │
-       │       │ exercise_results │                       │
-       │       ├──────────────────┤                       │
-       │       │ id (PK)          │                       │
-       └──────>│ user_id (FK)     │                       │
-               │ word_id (FK)     │<──────────────────────┘
-               │ exercise_type    │
-               │ is_correct       │
-               │ answer_given     │
-               │ time_spent_ms    │
-               │ created_at       │
-               └──────────────────┘
+┌──────────────────┐       ┌──────────────────┐       ┌───────────────┐
+│      users       │       │  user_progress   │       │     words     │
+├──────────────────┤       ├──────────────────┤       ├───────────────┤
+│ id (PK)          │──┐    │ id (PK)          │    ┌──│ id (PK)       │
+│ telegram_id      │  └───>│ user_id (FK)     │    │  │ original      │
+│ first_name       │       │ word_id (FK)     │<───┘  │ transcription │
+│ last_name        │       │ srs_stage        │       │ translations  │
+│ username         │       │ next_review_at   │       │ created_at    │
+│ language_code    │       │ last_reviewed_at │       └───────┬───────┘
+│ display_language │       │ created_at       │               │
+│ words_per_lesson │       └──────────────────┘               │
+│ created_at       │                                          │
+│ updated_at       │       ┌──────────────────┐               │
+└──────────────────┘       │ exercise_results │               │
+       │                   ├──────────────────┤               │
+       │                   │ id (PK)          │               │
+       └──────────────────>│ user_id (FK)     │               │
+                           │ word_id (FK)     │<──────────────┘
+                           │ exercise_type    │
+                           │ is_correct       │
+                           │ answer_given     │
+                           │ time_spent_ms    │
+                           │ created_at       │
+                           └──────────────────┘
 ```
 
 ## Tables
@@ -42,22 +41,24 @@ Word selection is dynamic — there are no predefined sets. The app builds each 
 
 Telegram users who interact with the bot.
 
-| Column        | Type           | Constraints          | Description                                      |
-|---------------|----------------|----------------------|--------------------------------------------------|
-| id            | `serial`       | PK                   | Internal ID                                      |
-| telegram_id   | `bigint`       | UNIQUE, NOT NULL     | Telegram user ID                                 |
-| first_name    | `varchar(255)` | NOT NULL             | Telegram first name                              |
-| last_name     | `varchar(255)` |                      | Telegram last name                               |
-| username      | `varchar(255)` |                      | Telegram username                                |
-| language_code | `varchar(10)`  |                      | Telegram client language (e.g. `en`, `ru`)       |
-| created_at    | `timestamptz`  | NOT NULL, DEFAULT now() | Registration timestamp                        |
-| updated_at    | `timestamptz`  | NOT NULL, DEFAULT now() | Last profile update                           |
-
-**Indexes:** `users_telegram_id_idx` UNIQUE on `telegram_id`
+| Column           | Type           | Constraints              | Description                                      |
+|------------------|----------------|--------------------------|--------------------------------------------------|
+| id               | `serial`       | PK                       | Internal ID                                      |
+| telegram_id      | `bigint`       | UNIQUE, NOT NULL         | Telegram user ID                                 |
+| first_name       | `varchar(255)` | NOT NULL                 | Telegram first name                              |
+| last_name        | `varchar(255)` |                          | Telegram last name                               |
+| username         | `varchar(255)` |                          | Telegram username                                |
+| language_code    | `varchar(10)`  |                          | Telegram client language (e.g. `en`, `ru`)       |
+| display_language | `varchar(10)`  | NOT NULL, DEFAULT 'en'   | UI and translation language, user-selectable      |
+| words_per_lesson | `integer`      | NOT NULL, DEFAULT 5      | Number of words per lesson session                |
+| created_at       | `timestamptz`  | NOT NULL, DEFAULT now()  | Registration timestamp                           |
+| updated_at       | `timestamptz`  | NOT NULL, DEFAULT now()  | Last profile update                              |
 
 **Notes:**
 - `telegram_id` is `bigint` because Telegram user IDs can exceed 32-bit range.
 - Profile fields (`first_name`, `username`, etc.) are synced from Telegram on each interaction.
+- `display_language` is derived from `language_code` on first registration: set to `language_code` if it matches a supported language (`en`, `ru`), otherwise defaults to `en`. Can be changed by the user in Mini App settings. Determines both UI language and which translation key to use from `words.translations`.
+- `words_per_lesson` controls how many words are selected per lesson session. Changeable in Mini App settings.
 
 ---
 
@@ -65,30 +66,29 @@ Telegram users who interact with the bot.
 
 Greek vocabulary items. Managed by the developer via migrations.
 
-| Column         | Type           | Constraints             | Description                                                  |
-|----------------|----------------|-------------------------|--------------------------------------------------------------|
-| id             | `serial`       | PK                      | Internal ID                                                  |
-| original       | `varchar(255)` | UNIQUE, NOT NULL        | Greek word or phrase                                         |
-| transcription  | `varchar(255)` |                         | Phonetic transcription (Latin characters)                    |
-| translations   | `jsonb`        | NOT NULL                | Translations keyed by language: `{"ru": "...", "en": "..."}` |
-| part_of_speech | `varchar(50)`  |                         | `noun`, `verb`, `adjective`, `phrase`, etc.                  |
-| notes          | `text`         |                         | Usage notes, context, examples                               |
-| created_at     | `timestamptz`  | NOT NULL, DEFAULT now() |                                                              |
-
-**Indexes:** `words_original_idx` UNIQUE on `original`
+| Column        | Type           | Constraints             | Description                                                  |
+|---------------|----------------|-------------------------|--------------------------------------------------------------|
+| id            | `serial`       | PK                      | Internal ID                                                  |
+| original      | `varchar(255)` | UNIQUE, NOT NULL        | Greek word or phrase                                         |
+| transcription | `varchar(255)` |                         | Phonetic transcription (Latin characters)                    |
+| translations  | `jsonb`        | NOT NULL                | Translations keyed by language: `{"ru": "...", "en": "..."}` |
+| created_at    | `timestamptz`  | NOT NULL, DEFAULT now() |                                                              |
 
 **Notes:**
 - `translations` is a JSONB object keyed by ISO 639-1 language code. Example:
   ```json
   {"ru": "привет", "en": "hello"}
   ```
-- The app selects the translation based on the user's `language_code`. Fallback order: user language → `en`.
+- The app selects the translation based on the user's `display_language`. Fallback order: `display_language` → `en`.
+- Every word **must** have at least an `en` key in `translations` (used as the ultimate fallback). This is a data integrity requirement enforced at migration time.
 
 ---
 
 ### user_progress
 
-Per-user, per-word SRS (spaced repetition) state. Created when a user first encounters a word.
+Per-user, per-word SRS (spaced repetition) state. Created when the user completes a lesson containing the word (via `POST /learn/complete`).
+
+**No record = stage `new`.** If a word has no `user_progress` row for a given user, it is treated as stage `new` for exercise generation and word selection purposes.
 
 | Column           | Type          | Constraints               | Description                    |
 |------------------|---------------|---------------------------|--------------------------------|
@@ -102,13 +102,14 @@ Per-user, per-word SRS (spaced repetition) state. Created when a user first enco
 
 **Indexes:**
 - `user_progress_user_word_idx` UNIQUE on (`user_id`, `word_id`)
-- `user_progress_next_review_idx` on (`user_id`, `next_review_at`) — for fetching due cards
+- `user_progress_review_idx` on (`user_id`, `srs_stage`, `next_review_at`) — covers all word selection queries (continue / review modes filter by `srs_stage` and `next_review_at`)
 
 **Notes:**
 - `srs_stage` is a PostgreSQL enum: `new`, `stage_1`, `stage_2`, `stage_3`, `stage_4`, `learned`.
 - `next_review_at` is the primary field used to select which words to review.
 - The review interval is derived from `srs_stage` in application code (see SRS Algorithm). No separate interval column needed.
-- A word is considered **learned** when `srs_stage = 'learned'` (see Learned Rule below).
+- `DEFAULT 'new'` is a safety net. In practice, `srs_stage` is always set explicitly by the stage progression logic when processing lesson results (`POST /learn/complete`).
+- A word is considered **learned** when `srs_stage = 'learned'` (see Stage Progression).
 
 ---
 
@@ -121,10 +122,10 @@ History log of every exercise attempt. Append-only — used for analytics and pr
 | id            | `serial`      | PK                      | Internal ID                                                    |
 | user_id       | `integer`     | FK → users.id, NOT NULL |                                                                |
 | word_id       | `integer`     | FK → words.id, NOT NULL |                                                                |
-| exercise_type | `varchar(50)` | NOT NULL                | `flashcard`, `multiple_choice`, `fill_blank`, `scramble`, etc. |
+| exercise_type | `varchar(50)` | NOT NULL                | `flashcard`, `multiple_choice`, `multiple_choice_reverse`, `fill_blank`, `scramble` |
 | is_correct    | `boolean`     | NOT NULL                | Whether the answer was correct                                 |
 | answer_given  | `varchar(500)`|                         | User's answer (for fill_blank, etc.)                           |
-| time_spent_ms | `integer`     |                         | Milliseconds spent on this exercise                            |
+| time_spent_ms | `integer`     |                         | Milliseconds spent on this exercise (optional, nullable)       |
 | created_at    | `timestamptz` | NOT NULL, DEFAULT now() |                                                                |
 
 **Indexes:**
@@ -178,7 +179,7 @@ Defined in application code (not in DB). Initial set:
 
 | Type                      | Description                                                        |
 |---------------------------|--------------------------------------------------------------------|
-| `flashcard`               | Show original → user recalls translation (self-graded)             |
+| `flashcard`               | Show original → reveal translation → continue (always correct)     |
 | `multiple_choice`         | Show original → pick correct translation from 4 options            |
 | `multiple_choice_reverse` | Show translation → pick correct original from 4 options            |
 | `scramble`                | Show shuffled letters of the original → user arranges them in order |
@@ -193,7 +194,16 @@ Each word receives a fixed set of exercises per lesson, determined by its curren
 | `new`               | `flashcard`, `multiple_choice`                             | 2     |
 | `stage_1`           | `multiple_choice`, `multiple_choice_reverse`               | 2     |
 | `stage_2`           | `multiple_choice`, `multiple_choice_reverse`, `fill_blank` | 3     |
-| `stage_3`–`learned` | `scramble`, `fill_blank`                                   | 2     |
+| `stage_3`           | `scramble`, `fill_blank`                                   | 2     |
+| `stage_4`           | `scramble`, `fill_blank`                                   | 2     |
+| `learned`           | `scramble`, `fill_blank`                                   | 2     |
+
+**Note:** at stage `new`, only `multiple_choice` is graded (`flashcard` is always correct), so the maximum error count per word is 1. The ">1 errors → roll back" rule cannot apply to `new` stage words.
+
+**Open design questions:**
+- Minimum word length for `scramble` exercise: words with fewer than 3 characters may not produce a meaningful scramble. Threshold and fallback behavior TBD.
+- Scramble shuffle guarantee: the shuffled array may accidentally match the original order. Re-shuffle behavior TBD.
+- Multi-word phrases: handling of `original` values containing spaces for `scramble` and `fill_blank` exercises TBD.
 
 ---
 
@@ -220,24 +230,26 @@ Fixed interval schedule — no dynamic ease factor.
    | `stage_4`          | `learned`         | 1440 min | Learned, review in 1 day  |
    | `learned`          | `learned`         | 1440 min | Stays learned             |
 
+   **Stay / roll back** — `next_review_at = now()` (word is immediately available for the next lesson):
+
+   | Outcome    | Example                        | next_review_at |
+   |------------|--------------------------------|----------------|
+   | 1 error    | `learned` stays `learned`      | `now()`        |
+   | >1 errors  | `learned` rolls back → `stage_4` | `now()`     |
+
+   **Note:** a `learned` word with 1 error stays `learned` but becomes immediately due for review (no 1-day interval). The word will keep appearing until the user answers with 0 errors.
+
 3. **Best case timeline:**
    ```
    Day 1 lesson 1: new → stage_1 (0 min)
-   Day 1 lesson 2: stage_1 → stage_2 (interval 1 day)
-   Day 2: stage_2 → stage_3 (interval 1 day)
-   Day 3: stage_3 → stage_4 (interval 1 day)
-   Day 4: stage_4 → learned
+   Day 1 lesson 2: stage_1 → stage_2 (0 min)
+   Day 1 lesson 3: stage_2 → stage_3 (interval 1 day)
+   Day 2: stage_3 → stage_4 (interval 1 day)
+   Day 3: stage_4 → learned
    ```
-   Minimum **4 days** with no mistakes.
+   Minimum **3 days** with no mistakes.
 
-4. **Fetching due cards:**
-   ```sql
-   SELECT w.*, up.* FROM user_progress up
-   JOIN words w ON w.id = up.word_id
-   WHERE up.user_id = $1 AND up.next_review_at <= now()
-   ORDER BY up.next_review_at ASC
-   LIMIT 20;
-   ```
+4. **Fetching due words:** each learning mode uses its own query — see Key Queries section below.
 
 ---
 
@@ -250,7 +262,7 @@ FROM words w
 LEFT JOIN user_progress up ON up.word_id = w.id AND up.user_id = $1
 WHERE up.id IS NULL
 ORDER BY random()
-LIMIT 10;
+LIMIT $2;  -- words_per_lesson
 ```
 
 ### Get words in progress (not yet learned, due for review)
@@ -261,49 +273,45 @@ JOIN words w ON w.id = up.word_id
 WHERE up.user_id = $1
   AND up.srs_stage != 'learned'
   AND up.next_review_at <= now()
-ORDER BY up.next_review_at ASC
-LIMIT 10;
+ORDER BY random()
+LIMIT $2;  -- words_per_lesson
 ```
 
 ### Get words due for review (learned words ready for repetition)
 ```sql
-SELECT w.*, up.next_review_at, up.srs_stage
+SELECT w.*, up.srs_stage, up.next_review_at
 FROM user_progress up
 JOIN words w ON w.id = up.word_id
 WHERE up.user_id = $1
   AND up.srs_stage = 'learned'
   AND up.next_review_at <= now()
-ORDER BY up.next_review_at ASC
-LIMIT 20;
+ORDER BY random()
+LIMIT $2;  -- words_per_lesson
 ```
 
 ### Check available learning modes for a user
 ```sql
 SELECT
-  EXISTS(
-    SELECT 1 FROM words w
-    LEFT JOIN user_progress up ON up.word_id = w.id AND up.user_id = $1
-    WHERE up.id IS NULL
-  ) AS has_new_words,
-  EXISTS(
-    SELECT 1 FROM user_progress up
-    WHERE up.user_id = $1
-      AND up.srs_stage != 'learned'
-      AND up.next_review_at <= now()
-  ) AS has_in_progress,
-  EXISTS(
-    SELECT 1 FROM user_progress up
-    WHERE up.user_id = $1
-      AND up.srs_stage = 'learned'
-      AND up.next_review_at <= now()
-  ) AS has_due_reviews;
+  (SELECT COUNT(*) FROM words w
+   LEFT JOIN user_progress up ON up.word_id = w.id AND up.user_id = $1
+   WHERE up.id IS NULL
+  ) AS new_available,
+  (SELECT COUNT(*) FROM user_progress up
+   WHERE up.user_id = $1
+     AND up.srs_stage != 'learned'
+     AND up.next_review_at <= now()
+  ) AS continue_available,
+  (SELECT COUNT(*) FROM user_progress up
+   WHERE up.user_id = $1
+     AND up.srs_stage = 'learned'
+     AND up.next_review_at <= now()
+  ) AS review_available;
 ```
 
 ### Get user's overall progress
 ```sql
 SELECT
   (SELECT COUNT(*) FROM words) AS total_words,
-  COUNT(up.id) AS studied_words,
   COUNT(up.id) FILTER (WHERE up.srs_stage = 'learned') AS learned_words
 FROM user_progress up
 WHERE up.user_id = $1;
@@ -319,3 +327,37 @@ WHERE up.user_id = $1;
 | users  | exercise_results | CASCADE   |
 | words  | user_progress    | CASCADE   |
 | words  | exercise_results | CASCADE   |
+
+---
+
+## Word Management
+
+Words are added and updated by the developer through Drizzle migrations. There is no admin UI or import script.
+
+**Minimum word count:** The system requires at least **4 words** in the `words` table for lessons to function. Multiple choice exercises need 3 distractors from other words. If fewer than 4 words exist, lessons cannot be generated.
+
+### Adding / Updating Words
+
+`drizzle-kit generate` creates migrations from **schema diffs** — it won't produce a file for data-only changes. To add or update word data, create a SQL migration file manually:
+
+```bash
+# 1. Create a migration file manually (use the next sequential number after existing migrations)
+mkdir -p packages/api/drizzle
+touch packages/api/drizzle/0004_add_words.sql
+
+# 2. Write INSERT/UPDATE statements:
+#    INSERT INTO words (original, transcription, translations)
+#    VALUES ('γεια', 'yia', '{"en": "hello", "ru": "привет"}');
+#
+#    UPDATE words SET translations = '{"en": "hi", "ru": "привет"}'
+#    WHERE original = 'γεια';
+
+# 3. Apply
+pnpm --filter api db:migrate
+```
+
+### Deleting Words
+
+Delete via a migration with `DELETE FROM words WHERE original = '...';`. Cascade rules (see above) automatically remove related `user_progress` and `exercise_results` records.
+
+In production, migrations run automatically on `api` container startup.

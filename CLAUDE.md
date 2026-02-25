@@ -3,6 +3,8 @@
 ## Rules
 
 - All documentation files (docs/, CLAUDE.md, etc.) must be written in English.
+- The `bot` package must only communicate with the `api` backend. Direct database access, direct external API calls (besides Telegram Bot API), or any other bypassing of the API layer is forbidden.
+- Respond in the same language the user writes in. If the user writes in Language1, respond in Language1. If in Language2, respond in Language2.
 
 ## Design Principles
 
