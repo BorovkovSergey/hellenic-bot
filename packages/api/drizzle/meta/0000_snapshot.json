@@ -389,15 +389,7 @@
       "indexes": {},
       "foreignKeys": {},
       "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "words_original_unique": {
-          "name": "words_original_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "original"
-          ]
-        }
-      },
+      "uniqueConstraints": {},
       "policies": {},
       "checkConstraints": {},
       "isRLSEnabled": false

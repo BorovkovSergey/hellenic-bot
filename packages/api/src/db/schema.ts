@@ -43,7 +43,7 @@ export const users = pgTable("users", {
 
 export const words = pgTable("words", {
   id: serial("id").primaryKey(),
-  original: varchar("original", { length: 255 }).unique().notNull(),
+  original: varchar("original", { length: 255 }).notNull(),
   transcription: varchar("transcription", { length: 255 }),
   translations: jsonb("translations").notNull().$type<Record<string, string>>(),
   notes: varchar("notes", { length: 255 }),
