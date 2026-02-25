@@ -32,22 +32,25 @@ Deploy the project to VPS.
    ```
    Must return `{"status":"ok"}`.
 
-5. **Start cloudflared tunnel** (kill existing first):
+5. **Check tunnel** — only start if not already running:
    ```
-   ssh vps "pkill -f 'cloudflared tunnel' 2>/dev/null || true"
-   ssh vps "nohup cloudflared tunnel --url http://localhost:8443 > /tmp/cf.log 2>&1 & sleep 5; grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/cf.log | head -1"
+   ssh vps "pgrep -f 'cloudflared tunnel' > /dev/null && echo 'RUNNING' || echo 'NOT_RUNNING'"
    ```
-   Capture the tunnel URL from output.
+   - If `RUNNING` — skip to step 6, tunnel is fine (it proxies localhost:8443, doesn't care about container restarts).
+   - If `NOT_RUNNING` — start a new tunnel:
+     ```
+     ssh vps "nohup cloudflared tunnel --url http://localhost:8443 > /tmp/cf.log 2>&1 & sleep 5; grep -oP 'https://[a-z0-9-]+\.trycloudflare\.com' /tmp/cf.log | head -1"
+     ```
+     Capture the tunnel URL, then update WEBAPP_URL and restart bot:
+     ```
+     ssh vps "sed -i 's|WEBAPP_URL=.*|WEBAPP_URL=<TUNNEL_URL>|' /opt/hellenic-bot/.env && cd /opt/hellenic-bot && sudo docker compose up -d bot"
+     ```
 
-6. **Update WEBAPP_URL and restart bot** with the tunnel URL:
-   ```
-   ssh vps "sed -i 's|WEBAPP_URL=.*|WEBAPP_URL=<TUNNEL_URL>|' /opt/hellenic-bot/.env && cd /opt/hellenic-bot && sudo docker compose up -d bot"
-   ```
-
-7. **Report** the tunnel URL and tell the user to send /start to the bot.
+6. **Report** deployment result. If tunnel was already running, just confirm containers are up.
 
 ## Important
 
 - Migrations run automatically on API container startup (`pnpm db:migrate` in Dockerfile CMD).
-- The tunnel URL changes on every restart — the bot must be recreated each time.
+- Do NOT restart the tunnel on every deploy — it survives container rebuilds. Only restart if it's not running.
+- The tunnel URL changes on every tunnel restart — the bot must be recreated only when the URL changes.
 - Do NOT use `ssh -t` — it requires a TTY and fails in non-interactive mode.
