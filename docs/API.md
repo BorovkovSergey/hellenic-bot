@@ -18,6 +18,22 @@ Mini App opens → sends initData to POST /auth/validate
 Subsequent requests → Authorization: Bearer <token>
 ```
 
+### initData Validation Algorithm
+
+Telegram standard HMAC-SHA256 verification:
+
+1. Parse `init_data` as URL search params
+2. Extract and remove `hash` param
+3. Sort remaining params alphabetically by key
+4. Join as `key=value\n` (newline-separated, no trailing newline)
+5. Compute HMAC-SHA256 of the bot token using the literal string `"WebAppData"` as the key → `secret_key`
+6. Compute HMAC-SHA256 of the data check string (step 4) using `secret_key` → `computed_hash`
+7. Compare `computed_hash` (hex) to the extracted `hash` value
+
+**Key detail (step 5):** `"WebAppData"` is the HMAC **key**, the bot token is the HMAC **data**. This matches the Telegram documentation: `secret_key = HMAC_SHA256(key="WebAppData", data=bot_token)`.
+
+---
+
 ### JWT Payload
 
 ```json
@@ -242,7 +258,7 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
       "exercise_type": "scramble",
       "prompt": {
         "translation": "water",
-        "scrambled": ["ό", "ν", "ρ", "ε"]
+        "scrambled": [["ό", "ν", "ρ", "ε"]]
       },
       "answer": {
         "original": "νερό"
@@ -318,7 +334,7 @@ The example below uses `mode: "continue"` — words are at different SRS stages,
 - For multiple choice, options are translation strings
 - For multiple choice reverse, options are objects with `original` and `transcription` fields
 - For fill_blank, `answer.original` is used for comparison
-- For scramble, `prompt.scrambled` is the shuffled character array
+- For scramble, `prompt.scrambled` is `string[][]` — an array of groups, one per word in the original phrase. Each group contains the shuffled characters of that word. For single words: `[["ό","ν","ρ","ε"]]`. For multi-word phrases (e.g. `"καλημέρα σας"`): `[["μ","ά","κ","η","ε","λ","ρ","α"],["σ","α","ς"]]`. Spaces between groups are fixed and non-interactive in the UI
 - Translations and option labels use the user's `display_language`. If the key is missing from `words.translations`, falls back to `en`
 
 **Errors:**

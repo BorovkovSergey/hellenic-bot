@@ -200,10 +200,9 @@ Each word receives a fixed set of exercises per lesson, determined by its curren
 
 **Note:** at stage `new`, only `multiple_choice` is graded (`flashcard` is always correct), so the maximum error count per word is 1. The ">1 errors → roll back" rule cannot apply to `new` stage words.
 
-**Open design questions:**
-- Minimum word length for `scramble` exercise: words with fewer than 3 characters may not produce a meaningful scramble. Threshold and fallback behavior TBD.
-- Scramble shuffle guarantee: the shuffled array may accidentally match the original order. Re-shuffle behavior TBD.
-- Multi-word phrases: handling of `original` values containing spaces for `scramble` and `fill_blank` exercises TBD.
+**Scramble behavior:**
+- **No minimum word length.** Even 2-character words receive scramble exercises. If the shuffled order happens to match the original, it acts as repetition — no re-shuffle is performed.
+- **Multi-word phrases:** spaces are fixed separators. The server splits `original` by spaces, scrambles each word's characters independently, and returns them as separate groups (`scrambled: string[][]` — see API.md). The client renders groups with non-interactive space separators between them.
 
 ---
 

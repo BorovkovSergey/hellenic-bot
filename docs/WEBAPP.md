@@ -253,6 +253,7 @@ Arrange shuffled letters of the Greek word in the correct order.
 - Tap a letter to place it in the next empty slot
 - Tap a placed letter to remove it
 - Check button validates the full word
+- **Multi-word phrases:** each word is a separate group of slots and available letters, with a fixed space separator between groups. The user fills each group independently
 
 ## Authentication
 
