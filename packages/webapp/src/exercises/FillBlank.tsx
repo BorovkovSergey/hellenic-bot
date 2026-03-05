@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
 import { t, type Lang } from "../i18n.js";
 import { NotesHint } from "./NotesHint.js";
+import { speakWord } from "../speak.js";
 
 interface FillBlankProps {
   prompt: { translation: string; notes?: string | null };
@@ -17,6 +18,9 @@ export function FillBlank({ prompt, answer, lang, onComplete }: FillBlankProps) 
 
   useEffect(() => {
     if (result !== null) {
+      if (result === "correct") {
+        speakWord(answer.original);
+      }
       const timer = setTimeout(() => {
         onComplete({
           is_correct: result === "correct",
@@ -40,64 +44,72 @@ export function FillBlank({ prompt, answer, lang, onComplete }: FillBlankProps) 
   };
 
   return (
-    <div style={{ padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "16px" }}>
-      <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
-        {prompt.translation}
-      </div>
-      <NotesHint notes={prompt.notes} revealed={result !== null} />
-
-      <input
-        type="text"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && !result && handleCheck()}
-        disabled={result !== null}
-        autoFocus
-        lang="el"
-        style={{
-          width: "100%",
-          maxWidth: "300px",
-          padding: "14px 16px",
-          border: result === "correct"
-            ? "2px solid #4caf50"
-            : result === "incorrect"
-              ? "2px solid #f44336"
-              : "1px solid rgba(128,128,128,0.3)",
-          borderRadius: "10px",
-          fontSize: "20px",
-          textAlign: "center",
-          backgroundColor: "transparent",
-          color: "var(--tg-theme-text-color)",
-          outline: "none",
-        }}
-      />
-
-      {result === "incorrect" && (
-        <div style={{ textAlign: "center", marginTop: "8px" }}>
-          <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
-            {answer.original}
-          </div>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, padding: "32px 24px" }}>
+      {/* Top zone: prompt */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
+          {prompt.translation}
         </div>
-      )}
+        <NotesHint notes={prompt.notes} revealed={result !== null} />
+      </div>
 
-      {result === null && (
-        <button
-          onClick={handleCheck}
-          disabled={input.trim() === ""}
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Bottom zone: input + check */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", paddingBottom: "24px" }}>
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && !result && handleCheck()}
+          disabled={result !== null}
+          autoFocus
+          lang="el"
           style={{
-            marginTop: "16px",
-            padding: "14px 32px",
-            backgroundColor: input.trim() ? "var(--tg-theme-button-color)" : "rgba(128,128,128,0.2)",
-            color: input.trim() ? "var(--tg-theme-button-text-color)" : "rgba(128,128,128,0.5)",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "16px",
-            cursor: input.trim() ? "pointer" : "default",
+            width: "100%",
+            maxWidth: "300px",
+            padding: "14px 16px",
+            border: result === "correct"
+              ? "2px solid #4caf50"
+              : result === "incorrect"
+                ? "2px solid #f44336"
+                : "1px solid rgba(128,128,128,0.3)",
+            borderRadius: "10px",
+            fontSize: "20px",
+            textAlign: "center",
+            backgroundColor: "transparent",
+            color: "var(--tg-theme-text-color)",
+            outline: "none",
           }}
-        >
-          {i.check}
-        </button>
-      )}
+        />
+
+        {result === "incorrect" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
+              {answer.original}
+            </div>
+          </div>
+        )}
+
+        {result === null && (
+          <button
+            onClick={handleCheck}
+            disabled={input.trim() === ""}
+            style={{
+              padding: "14px 32px",
+              backgroundColor: input.trim() ? "var(--tg-theme-button-color)" : "rgba(128,128,128,0.2)",
+              color: input.trim() ? "var(--tg-theme-button-text-color)" : "rgba(128,128,128,0.5)",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "16px",
+              cursor: input.trim() ? "pointer" : "default",
+            }}
+          >
+            {i.check}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { hapticLight, hapticSuccess, hapticError } from "../telegram.js";
 import { t, type Lang } from "../i18n.js";
 import { NotesHint } from "./NotesHint.js";
+import { speakWord } from "../speak.js";
 
 interface ScrambleProps {
   prompt: { translation: string; scrambled: string[][]; notes?: string | null };
@@ -26,6 +27,9 @@ export function Scramble({ prompt, answer, lang, onComplete }: ScrambleProps) {
 
   useEffect(() => {
     if (result !== null) {
+      if (result === "correct") {
+        speakWord(answer.original);
+      }
       const timer = setTimeout(() => {
         const assembled = groups
           .map((g) => g.slots.join(""))
@@ -101,106 +105,115 @@ export function Scramble({ prompt, answer, lang, onComplete }: ScrambleProps) {
   };
 
   return (
-    <div style={{ padding: "32px 24px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
-      <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
-        {prompt.translation}
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, padding: "32px 24px" }}>
+      {/* Top zone: prompt */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
+          {prompt.translation}
+        </div>
+        <NotesHint notes={prompt.notes} revealed={result !== null} />
       </div>
-      <NotesHint notes={prompt.notes} revealed={result !== null} />
 
-      {/* Slots */}
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-        {groups.map((group, gi) => (
-          <React.Fragment key={gi}>
-            {gi > 0 && (
-              <div style={{ display: "flex", alignItems: "center", fontSize: "20px", opacity: 0.3 }}>·</div>
-            )}
-            <div style={{ display: "flex", gap: "4px" }}>
-              {group.slots.map((char, si) => (
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Bottom zone: slots + letters + check */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "20px", paddingBottom: "24px" }}>
+        {/* Slots */}
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          {groups.map((group, gi) => (
+            <React.Fragment key={gi}>
+              {gi > 0 && (
+                <div style={{ display: "flex", alignItems: "center", fontSize: "20px", opacity: 0.3 }}>·</div>
+              )}
+              <div style={{ display: "flex", gap: "4px" }}>
+                {group.slots.map((char, si) => (
+                  <button
+                    key={si}
+                    onClick={() => handleRemoveLetter(gi, si)}
+                    style={{
+                      width: "36px",
+                      height: "40px",
+                      border: char
+                        ? "2px solid var(--tg-theme-button-color)"
+                        : "2px dashed rgba(128,128,128,0.3)",
+                      borderRadius: "6px",
+                      backgroundColor: char ? "rgba(128,128,128,0.05)" : "transparent",
+                      color: "var(--tg-theme-text-color)",
+                      fontSize: "18px",
+                      fontWeight: "bold",
+                      cursor: char ? "pointer" : "default",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {char}
+                  </button>
+                ))}
+              </div>
+            </React.Fragment>
+          ))}
+        </div>
+
+        {/* Available letters */}
+        <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+          {groups.map((group, gi) => (
+            <div key={gi} style={{ display: "flex", gap: "4px" }}>
+              {group.available.map((item, ai) => (
                 <button
-                  key={si}
-                  onClick={() => handleRemoveLetter(gi, si)}
+                  key={ai}
+                  onClick={() => handlePlaceLetter(gi, ai)}
+                  disabled={item.used || result !== null}
                   style={{
                     width: "36px",
                     height: "40px",
-                    border: char
-                      ? "2px solid var(--tg-theme-button-color)"
-                      : "2px dashed rgba(128,128,128,0.3)",
+                    border: "none",
                     borderRadius: "6px",
-                    backgroundColor: char ? "rgba(128,128,128,0.05)" : "transparent",
-                    color: "var(--tg-theme-text-color)",
+                    backgroundColor: item.used ? "rgba(128,128,128,0.05)" : "var(--tg-theme-button-color)",
+                    color: item.used ? "transparent" : "var(--tg-theme-button-text-color)",
                     fontSize: "18px",
                     fontWeight: "bold",
-                    cursor: char ? "pointer" : "default",
+                    cursor: item.used ? "default" : "pointer",
+                    opacity: item.used ? 0.2 : 1,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                   }}
                 >
-                  {char}
+                  {item.char}
                 </button>
               ))}
             </div>
-          </React.Fragment>
-        ))}
-      </div>
-
-      {/* Available letters */}
-      <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
-        {groups.map((group, gi) => (
-          <div key={gi} style={{ display: "flex", gap: "4px" }}>
-            {group.available.map((item, ai) => (
-              <button
-                key={ai}
-                onClick={() => handlePlaceLetter(gi, ai)}
-                disabled={item.used || result !== null}
-                style={{
-                  width: "36px",
-                  height: "40px",
-                  border: "none",
-                  borderRadius: "6px",
-                  backgroundColor: item.used ? "rgba(128,128,128,0.05)" : "var(--tg-theme-button-color)",
-                  color: item.used ? "transparent" : "var(--tg-theme-button-text-color)",
-                  fontSize: "18px",
-                  fontWeight: "bold",
-                  cursor: item.used ? "default" : "pointer",
-                  opacity: item.used ? 0.2 : 1,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                {item.char}
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
-
-      {result === "incorrect" && (
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
-            {answer.original}
-          </div>
+          ))}
         </div>
-      )}
 
-      {result === null && (
-        <button
-          onClick={handleCheck}
-          disabled={!allFilled}
-          style={{
-            padding: "14px 32px",
-            backgroundColor: allFilled ? "var(--tg-theme-button-color)" : "rgba(128,128,128,0.2)",
-            color: allFilled ? "var(--tg-theme-button-text-color)" : "rgba(128,128,128,0.5)",
-            border: "none",
-            borderRadius: "12px",
-            fontSize: "16px",
-            cursor: allFilled ? "pointer" : "default",
-          }}
-        >
-          {i.check}
-        </button>
-      )}
+        {result === "incorrect" && (
+          <div style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "24px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
+              {answer.original}
+            </div>
+          </div>
+        )}
+
+        {result === null && (
+          <button
+            onClick={handleCheck}
+            disabled={!allFilled}
+            style={{
+              padding: "14px 32px",
+              backgroundColor: allFilled ? "var(--tg-theme-button-color)" : "rgba(128,128,128,0.2)",
+              color: allFilled ? "var(--tg-theme-button-text-color)" : "rgba(128,128,128,0.5)",
+              border: "none",
+              borderRadius: "12px",
+              fontSize: "16px",
+              cursor: allFilled ? "pointer" : "default",
+            }}
+          >
+            {i.check}
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -35,13 +35,15 @@ The landing screen after authentication. Shows progress summary and available le
 
 ```
 ┌─────────────────────────────┐
-│ 🇬🇷 Hellenic          ⚙️    │  ← Settings gear
+│ 🇬🇷 Hellenic          ⚙️     │  ← Settings gear
 ├─────────────────────────────┤
 │                             │
 │   42 / 100 words learned    │  ← Progress indicator
 │   ████████░░░░░  42%        │  ← Progress bar
 │                             │
-├─────────────────────────────┤
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
 │                             │
 │  ┌─────────────────────┐    │
 │  │  📗 Learn New  (15) │    │  ← Available count
@@ -94,10 +96,12 @@ The exercise screen. Shows one exercise at a time with a progress indicator.
 │ ████████░░░░░░░░░░░░░░░░░░  │  ← Progress bar
 ├─────────────────────────────┤
 │                             │
-│     [ Exercise content ]    │  ← Varies by type
+│   [ Prompt: word / hint ]   │  ← Top zone (content)
 │                             │
-├─────────────────────────────┤
-│     [ Action area ]         │  ← Buttons / input
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
+│     [ Action area ]         │  ← Buttons / options / input
 └─────────────────────────────┘
 ```
 
@@ -133,7 +137,31 @@ Summary shown after completing all exercises.
 - `previous_stage: null` from the API (first encounter) is displayed as `"new"` — e.g. `new → stage_1`
 - "Back to Home" returns to the Home screen with refreshed stats
 
+## Audio Pronunciation
+
+Greek words are pronounced using the browser's **Web Speech Synthesis API** (`speechSynthesis`). No backend or audio files required.
+
+**Technology:** `SpeechSynthesisUtterance` with `lang: "el-GR"`, `rate: 0.9` (slightly slower for learners).
+
+**When audio plays:**
+
+| Exercise              | Auto-play trigger                     | Replay button |
+|-----------------------|---------------------------------------|---------------|
+| Flashcard             | On mount (word appears)               | Yes           |
+| Multiple Choice       | On mount (word appears)               | Yes           |
+| Multiple Choice Rev.  | On answer reveal (correct word)       | No            |
+| Fill Blank            | On correct answer                     | No            |
+| Scramble              | On correct answer                     | No            |
+
+**Replay button:** A small speaker icon (`SpeakButton`) displayed inline next to the Greek word. Only present in exercises where the Greek word is the prompt (Flashcard, Multiple Choice). Tapping it replays the pronunciation.
+
+**Fallback:** If `speechSynthesis` is not available in the browser, all audio features silently no-op. No error shown.
+
+---
+
 ## Exercise Types — UI
+
+**Layout rule:** every exercise uses a two-zone layout within the full viewport height. The **top zone** (prompt: word, transcription, notes) is positioned near the top. The **bottom zone** (action buttons, options, input) is pinned to the bottom of the viewport. A flexible spacer fills the gap between zones. This keeps action targets in a consistent, thumb-friendly position regardless of content height.
 
 **Typography rule:** wherever a Greek word appears, show it as **bold/large** (primary focus) with transcription below in **muted/small** (secondary). The user should focus on the Greek script, transcription is a reading aid.
 
@@ -154,20 +182,22 @@ The user sees the Greek word, tries to recall the translation, then reveals it.
 State 1 (front):                State 2 (revealed):
 ┌────────────────────┐          ┌────────────────────┐
 │                    │          │                    │
-│       αγάπη        │  ← bold  │       αγάπη        │
+│    αγάπη  🔊       │  ← bold  │    αγάπη  🔊       │
 │       agápi        │  ← muted │       agápi        │
 │       ░░░          │  ← notes │         η          │
 │                    │  blurred │                    │
-│   [ Tap to reveal ]│          │      love          │
-│                    │          │                    │
-├────────────────────┤          ├────────────────────┤
-│                    │          │   [ Continue → ]   │
+│                    │          │       love         │
+│         ·          │  flex    │                    │
+│                    │  space   │         ·          │
+├────────────────────┤  bottom  ├────────────────────┤
+│ [ Tap to reveal ]  │          │  [ Continue → ]    │
 └────────────────────┘          └────────────────────┘
 ```
 
 - Tap the card or button to reveal the translation
 - After reveal, tap "Continue" to proceed — always counts as correct
 - Notes (if present) are shown below transcription — blurred by default, tap to reveal
+- Audio: auto-plays on mount + 🔊 replay button next to the word
 
 ### Multiple Choice
 
@@ -176,10 +206,12 @@ Show Greek word, pick the correct translation from 4 options. The API always ret
 ```
 ┌─────────────────────────────┐
 │                             │
-│        ευχαριστώ            │  ← bold, large
+│     ευχαριστώ  🔊           │  ← bold, large
 │        efcharistó           │  ← muted, small
 │                             │
-├─────────────────────────────┤
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
 │  ┌───────────────────────┐  │
 │  │     thank you         │  │  ← Correct
 │  ├───────────────────────┤  │
@@ -195,6 +227,7 @@ Show Greek word, pick the correct translation from 4 options. The API always ret
 - On tap: correct answer highlights green, wrong answer highlights red (correct also shown)
 - Auto-advance after brief delay
 - Notes (if present) shown below transcription — blurred by default, tap to reveal
+- Audio: auto-plays on mount + 🔊 replay button next to the word
 
 ### Multiple Choice Reverse
 
@@ -205,7 +238,9 @@ Show translation, pick the correct Greek word from 4 options. Same client-side s
 │                             │
 │          thank you          │
 │                             │
-├─────────────────────────────┤
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
 │  ┌───────────────────────┐  │
 │  │  ευχαριστώ            │  │  ← Correct
 │  │  efcharistó           │  │
@@ -224,6 +259,7 @@ Show translation, pick the correct Greek word from 4 options. Same client-side s
 
 Same interaction as multiple choice, but reversed direction.
 - Notes (if present) shown below translation — blurred by default, tap to reveal
+- Audio: pronounces the correct Greek word when the answer is revealed
 
 ### Fill Blank
 
@@ -235,6 +271,9 @@ Type the Greek word given its translation.
 │          water              │  ← translation
 │           ░░                │  ← notes (blurred)
 │                             │
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
 │    ┌─────────────────┐      │
 │    │ ν ε ρ _         │      │  ← Text input
 │    └─────────────────┘      │
@@ -247,6 +286,7 @@ Type the Greek word given its translation.
 - On submit: compare answer (case-insensitive, trimmed, accents must match exactly)
 - Show correct answer if wrong: word bold + transcription muted below it
 - Notes (if present) shown below translation — blurred by default, tap to reveal
+- Audio: pronounces the word on correct answer
 
 ### Scramble
 
@@ -258,9 +298,12 @@ Arrange shuffled letters of the Greek word in the correct order.
 │          water              │  ← translation
 │           ░░                │  ← notes (blurred)
 │                             │
+│              ·              │  ← flexible space
+│                             │
+├─────────────────────────────┤  ← pinned to bottom
 │    Answer: [ ν ][ ε ][ _ ]  │  ← Slots
 │                             │
-│    [ ό ][ ν ][ ρ ][ ε ]    │  ← Available letters
+│    [ ό ][ ν ][ ρ ][ ε ]     │  ← Available letters
 │                             │
 │       [ Check ]             │
 └─────────────────────────────┘
@@ -271,6 +314,7 @@ Arrange shuffled letters of the Greek word in the correct order.
 - Check button validates the full word
 - **Multi-word phrases:** each word is a separate group of slots and available letters, with a fixed space separator between groups. The user fills each group independently
 - Notes (if present) shown below translation — blurred by default, tap to reveal
+- Audio: pronounces the word on correct answer
 
 ## Authentication
 

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
 import { NotesHint } from "./NotesHint.js";
+import { speakWord } from "../speak.js";
+import { SpeakButton } from "../components/SpeakButton.js";
 
 interface MultipleChoiceProps {
   prompt: { original: string; transcription?: string; notes?: string | null };
@@ -11,6 +13,10 @@ interface MultipleChoiceProps {
 
 export function MultipleChoice({ prompt, options, correctIndex, onComplete }: MultipleChoiceProps) {
   const [selected, setSelected] = useState<number | null>(null);
+
+  useEffect(() => {
+    speakWord(prompt.original);
+  }, []);
 
   // Shuffle options on mount
   const shuffled = useMemo(() => {
@@ -45,10 +51,14 @@ export function MultipleChoice({ prompt, options, correctIndex, onComplete }: Mu
   };
 
   return (
-    <div style={{ padding: "32px 24px" }}>
-      <div style={{ textAlign: "center", marginBottom: "32px" }}>
-        <div style={{ fontSize: "32px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
-          {prompt.original}
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, padding: "32px 24px" }}>
+      {/* Top zone: prompt */}
+      <div style={{ textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px" }}>
+          <span style={{ fontSize: "32px", fontWeight: "bold", color: "var(--tg-theme-text-color)" }}>
+            {prompt.original}
+          </span>
+          <SpeakButton text={prompt.original} />
         </div>
         {prompt.transcription && (
           <div style={{ fontSize: "16px", color: "var(--tg-theme-text-color)", opacity: 0.5, marginTop: "8px" }}>
@@ -58,7 +68,11 @@ export function MultipleChoice({ prompt, options, correctIndex, onComplete }: Mu
         <NotesHint notes={prompt.notes} revealed={selected !== null} />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Bottom zone: options */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingBottom: "24px" }}>
         {shuffled.map((origIdx, displayIdx) => {
           let bg = "rgba(128,128,128,0.1)";
           if (selected !== null) {

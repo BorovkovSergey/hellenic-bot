@@ -118,7 +118,7 @@ export function Lesson({ mode, lang, onComplete, onAbandon }: LessonProps) {
   const pct = Math.round((currentIdx / total) * 100);
 
   return (
-    <div style={{ minHeight: "100vh", color: "var(--tg-theme-text-color)" }}>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", color: "var(--tg-theme-text-color)" }}>
       {/* Header */}
       <div style={{ padding: "16px 24px 0" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
@@ -134,8 +134,10 @@ export function Lesson({ mode, lang, onComplete, onAbandon }: LessonProps) {
         </div>
       </div>
 
-      {/* Exercise */}
-      {renderExercise(exercise, lang, handleExerciseComplete)}
+      {/* Exercise fills remaining space */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+        {renderExercise(exercise, lang, handleExerciseComplete)}
+      </div>
     </div>
   );
 }

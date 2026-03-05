@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { hapticSuccess, hapticError } from "../telegram.js";
 import { NotesHint } from "./NotesHint.js";
+import { speakWord } from "../speak.js";
 
 interface Option {
   original: string;
@@ -38,6 +39,12 @@ export function MultipleChoiceReverse({ prompt, options, correctIndex, onComplet
     }
   }, [selected]);
 
+  useEffect(() => {
+    if (selected !== null) {
+      speakWord(options[shuffled[correctShuffledIdx]].original);
+    }
+  }, [selected]);
+
   const handleSelect = (idx: number) => {
     if (selected !== null) return;
     setSelected(idx);
@@ -49,15 +56,20 @@ export function MultipleChoiceReverse({ prompt, options, correctIndex, onComplet
   };
 
   return (
-    <div style={{ padding: "32px 24px" }}>
-      <div style={{ textAlign: "center", marginBottom: "32px" }}>
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, padding: "32px 24px" }}>
+      {/* Top zone: prompt */}
+      <div style={{ textAlign: "center" }}>
         <div style={{ fontSize: "24px", color: "var(--tg-theme-text-color)" }}>
           {prompt.translation}
         </div>
         <NotesHint notes={prompt.notes} revealed={selected !== null} />
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+      {/* Spacer */}
+      <div style={{ flex: 1 }} />
+
+      {/* Bottom zone: options */}
+      <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingBottom: "24px" }}>
         {shuffled.map((origIdx, displayIdx) => {
           let bg = "rgba(128,128,128,0.1)";
           if (selected !== null) {
